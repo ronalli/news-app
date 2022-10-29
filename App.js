@@ -1,25 +1,68 @@
-import { View, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  StatusBar,
+  Alert,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity,
+} from 'react-native';
 import { Post } from './components/Post';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 
 export default function App() {
   const [items, setItems] = useState();
-  useEffect(() => {
-    axios
-      .get('http://localhost:3000/news')
-      .then(({ data }) => setItems(data))
-      .catch((error) => console.error(error));
-  }, []);
+  const [isLoading, setIsLoading] = useState(true);
 
-  console.log(items);
+  const fetchPosts = () => {
+    setIsLoading(true);
+    axios
+      .get('https://635d806107076ac24f3e5d05.mockapi.io/news')
+      .then(({ data }) => setItems(data))
+      .catch((error) => {
+        Alert.alert('Ошибка', 'Не удалось получить статьи');
+        console.log(error);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  useEffect(fetchPosts, []);
+
+  if (isLoading)
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <ActivityIndicator size='large' />
+        <Text
+          style={{
+            marginTop: 15,
+            fontWeight: 'bold',
+          }}
+        >
+          Loading...
+        </Text>
+      </View>
+    );
 
   return (
     <View>
-      <Post
-        title='Hello'
-        createAt='27.10.2022'
-        imageUrl='https://cdn.pixabay.com/photo/2013/09/29/18/19/dog-188273_960_720.jpg'
+      <FlatList
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={fetchPosts} />
+        }
+        data={items}
+        renderItem={({ item }) => (
+          <TouchableOpacity>
+            <Post {...item} />
+          </TouchableOpacity>
+        )}
       />
       <StatusBar theme='auto' />
     </View>
